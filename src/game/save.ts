@@ -2,26 +2,31 @@
 import { MAX_LEVEL, XP_TO_LEVEL, LEVEL_GOLD } from "./data";
 
 export interface SaveState {
-  name:string; mail:string; avatar:string;
+  name:string; mail:string; password:string; avatar:string;
   gold:number; level:number; xp:number;
   owned:string[]; deck:string[];
   storyDone:boolean[]; created:boolean;
 }
 
 const SAVE_KEY = "arcanum_v1";
+const AUTH_KEY = "arcanum_authed";
 
 export function loadSave():SaveState|null{
   try{ return JSON.parse(localStorage.getItem(SAVE_KEY) || "null"); }catch{ return null; }
 }
 export function saveState(s:SaveState){ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }
+export function clearSave(){ localStorage.removeItem(SAVE_KEY); logout(); }
 
-export function newSave(name:string, mail:string, avatar:string):SaveState{
-  return {name, mail, avatar, gold:0, level:1, xp:0,
+export function isAuthed():boolean{ return sessionStorage.getItem(AUTH_KEY)==="1"; }
+export function login(){ sessionStorage.setItem(AUTH_KEY, "1"); }
+export function logout(){ sessionStorage.removeItem(AUTH_KEY); }
+
+export function newSave(name:string, mail:string, password:string, avatar:string="Guerreiro"):SaveState{
+  return {name, mail, password, avatar, gold:0, level:1, xp:0,
           owned:[], deck:[], storyDone:[false,false,false,false,false], created:false};
 }
 
 export interface LevelUp { level:number; gold:number; }
-/** aplica XP; retorna level-ups ocorridos (com ouro ganho em cada) */
 export function grantXp(s:SaveState, xp:number):LevelUp[]{
   const ups:LevelUp[] = [];
   if(s.level>=MAX_LEVEL) return ups;
@@ -37,7 +42,6 @@ export function grantXp(s:SaveState, xp:number):LevelUp[]{
   return ups;
 }
 
-// silhuetas de perfil (SVG paths por classe)
 export const AVATAR_PATHS: Record<string,string> = {
   Guerreiro: "M12 2l3 3v3h2l1 3-3 1v3l2 6h-4l-1-5h-1l-1 5H6l2-6v-3l-3-1 1-3h2V5l3-3z",
   Mago: "M12 1l2 6h5l-4 4 2 6-5-3-5 3 2-6-4-4h5l2-6zM7 19h10l1 3H6l1-3z",

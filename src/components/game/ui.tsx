@@ -19,12 +19,12 @@ export const AvatarIcon = ({cls, size=44, selected=false, onClick}:{cls:string; 
   </div>
 );
 
-// ---- modal ornamentado ----
+// ---- modal ornamentado (sem scrollbars) ----
 export const GameModal = ({open, children, wide=false}:{open:boolean; children:ReactNode; wide?:boolean}) => {
   if(!open) return null;
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className={`ornate-border bg-card/95 backdrop-blur-md rounded-lg p-8 ${wide?"max-w-3xl":"max-w-lg"} w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200`}>
+      <div className={`ornate-border bg-card/95 backdrop-blur-md rounded-lg p-8 ${wide?"max-w-3xl":"max-w-lg"} w-full max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200`}>
         {children}
       </div>
     </div>
@@ -36,14 +36,28 @@ export const CardThumb = ({def, selected=false, dim=false, price=false, ownedTag
   {def:CardDef; selected?:boolean; dim?:boolean; price?:boolean; ownedTag?:boolean; onClick?:()=>void}) => (
   <div
     onClick={onClick}
-    className={`relative rounded-md overflow-hidden border transition-all duration-150 cursor-pointer
-      ${selected ? "border-gold-light shadow-[0_0_18px_hsl(var(--gold-light)/0.55)]" : "border-gold/40"}
-      ${dim ? "opacity-30 grayscale" : "hover:-translate-y-1 hover:shadow-[0_10px_24px_rgba(0,0,0,0.7),0_0_18px_hsl(var(--magic-glow)/0.35)]"}`}
+    className={`relative rounded-md overflow-hidden border transition-all duration-200 cursor-pointer aspect-[3/4] bg-black/50
+      ${selected
+        ? "card-selected border-lightning-glow"
+        : "border-gold/40 hover:-translate-y-1 hover:scale-[1.04] hover:shadow-[0_10px_24px_rgba(0,0,0,0.7),0_0_18px_hsl(var(--magic-glow)/0.35)]"}
+      ${dim ? "opacity-30 grayscale" : ""}`}
   >
-    <img src={cardImg(def)} alt={def.name} className="w-full block" draggable={false}/>
+    {def.token ? (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-1 bg-gradient-to-b from-magic/30 to-card">
+        <span className="text-4xl">{def.id==="_sombra"?"🗡":"☽"}</span>
+        <span className="text-[0.7rem] font-bold text-gold-light tracking-wider uppercase">{def.name}</span>
+      </div>
+    ) : (
+      <img src={cardImg(def)} alt={def.name} className="absolute inset-0 w-full h-full object-cover" draggable={false}/>
+    )}
     <span className="absolute top-1 left-1 bg-black/80 border border-gold/60 text-gold-light text-[0.62rem] font-bold px-1.5 py-0.5 rounded">
       R{def.rank}
     </span>
+    {selected && (
+      <span className="absolute top-1 right-1 bg-lightning-glow text-black text-[0.6rem] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-[0_0_10px_hsl(var(--lightning-glow))]">
+        ✓
+      </span>
+    )}
     {price && (
       <span className="absolute bottom-1 right-1 bg-black/85 border border-gold/60 text-gold-light text-[0.66rem] font-bold px-1.5 py-0.5 rounded">
         {CARD_PRICE(def.rank)} 🪙
@@ -57,29 +71,31 @@ export const CardThumb = ({def, selected=false, dim=false, price=false, ownedTag
   </div>
 );
 
-// ---- contadores por rank (deck de 20, 4 por rank) ----
+// ---- contadores por rank ----
 export const RankCounts = ({ids}:{ids:string[]}) => {
   const cnt:Record<number,number> = {1:0,2:0,3:0,4:0,5:0};
   ids.forEach(id=>cnt[BY_ID[id].rank]++);
   return (
-    <div className="flex gap-3 flex-wrap text-xs text-muted-foreground items-center">
+    <div className="flex gap-3 flex-nowrap text-xs text-muted-foreground items-center">
       {[1,2,3,4,5].map(r=>(
-        <span key={r}>R{r}: <b className={cnt[r]===PER_RANK ? "text-gold-light" : "text-destructive"}>{cnt[r]}/{PER_RANK}</b></span>
+        <span key={r} className="whitespace-nowrap tabular-nums inline-block min-w-[3.4rem]">
+          R{r}: <b className={cnt[r]===PER_RANK ? "text-gold-light" : "text-destructive"}>{cnt[r]}/{PER_RANK}</b>
+        </span>
       ))}
-      <span>Total: <b className={ids.length===DECK_SIZE ? "text-gold-light" : "text-foreground"}>{ids.length}/{DECK_SIZE}</b></span>
+      <span className="whitespace-nowrap tabular-nums inline-block min-w-[5.2rem]">
+        Total: <b className={ids.length===DECK_SIZE ? "text-gold-light" : "text-foreground"}>{ids.length}/{DECK_SIZE}</b>
+      </span>
     </div>
   );
 };
 
-// ---- cabeçalho de página ----
 export const PageHead = ({title, children}:{title:string; children?:ReactNode}) => (
-  <div className="w-full flex items-center justify-between gap-3 flex-wrap px-6 py-4 border-b border-gold/25 bg-black/30 backdrop-blur-md">
-    <h2 className="text-2xl font-bold text-gold-light tracking-wider">{title}</h2>
-    <div className="flex gap-3 items-center flex-wrap">{children}</div>
+  <div className="w-full flex items-center justify-between gap-3 flex-nowrap px-6 py-4 border-b border-gold/25 bg-black/30 backdrop-blur-md">
+    <h2 className="text-2xl font-bold text-gold-light tracking-wider whitespace-nowrap">{title}</h2>
+    <div className="flex gap-3 items-center flex-nowrap">{children}</div>
   </div>
 );
 
-// ---- indicador de ouro ----
 export const GoldBadge = ({gold}:{gold:number}) => (
   <div className="ornate-border bg-card/80 backdrop-blur-md px-4 py-1.5 rounded-lg flex items-center gap-2">
     <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-yellow-200 to-yellow-700 shadow-[0_0_8px_hsl(var(--gold-light)/0.8)]"/>
@@ -87,10 +103,10 @@ export const GoldBadge = ({gold}:{gold:number}) => (
   </div>
 );
 
-// ---- botão secundário menor ----
-export const GameButtonSm = ({children, onClick, disabled=false, danger=false}:
-  {children:ReactNode; onClick?:()=>void; disabled?:boolean; danger?:boolean}) => (
+export const GameButtonSm = ({children, onClick, disabled=false, danger=false, type}:
+  {children:ReactNode; onClick?:()=>void; disabled?:boolean; danger?:boolean; type?:"button"|"submit"}) => (
   <button
+    type={type}
     onClick={onClick}
     disabled={disabled}
     className={`ornate-border px-4 py-2 font-bold text-sm tracking-wider uppercase rounded backdrop-blur-md
@@ -103,3 +119,25 @@ export const GameButtonSm = ({children, onClick, disabled=false, danger=false}:
     {children}
   </button>
 );
+
+// ---- Overlay de preview grande ao passar mouse ----
+export const CardPreview = ({def, side="right"}:{def:CardDef|null; side?:"left"|"right"}) => {
+  if(!def) return null;
+  const pos = side==="left" ? "left-6" : "right-6";
+  return (
+    <div className={`fixed top-1/2 -translate-y-1/2 ${pos} z-[45] pointer-events-none animate-in fade-in zoom-in-95 duration-150`}>
+      <div className="w-72 aspect-[3/4] rounded-lg border-2 border-gold-light overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_40px_hsl(var(--magic-glow)/0.6)] bg-black">
+        {def.token ? (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-magic/40 to-card">
+            <span className="text-7xl">{def.id==="_sombra"?"🗡":"☽"}</span>
+            <span className="text-lg font-bold text-gold-light tracking-widest uppercase">{def.name}</span>
+            <span className="text-xs text-muted-foreground px-4 text-center">{def.txt}</span>
+            <span className="text-sm text-lightning-glow font-bold">Rank {def.rank} · {def.dmg} de Dano</span>
+          </div>
+        ) : (
+          <img src={cardImg(def)} alt={def.name} className="w-full h-full object-cover" draggable={false}/>
+        )}
+      </div>
+    </div>
+  );
+};

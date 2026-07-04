@@ -4,14 +4,17 @@ import { toast } from "sonner";
 import {
   B, newBattle, startRound, starterOfRound, botTurn,
   playCard, moveCard, canPlayAt, cardCost, effDmg, locTotal, grandTotal,
-  endRoundPhase1, endRoundPhase2,
+  endRoundPhase1, endRoundPhase2, unplayCard,
   type BattleMeta, type CardInst, type FelinaPend, type Verdict, type Side,
 } from "@/game/engine";
-import { CARDS, STORY, REWARDS, cardImg } from "@/game/data";
+import { CARDS, STORY, REWARDS, cardImg, type CardDef } from "@/game/data";
 import { loadSave, saveState, grantXp, type LevelUp } from "@/game/save";
-import { GameModal, GameButtonSm } from "@/components/game/ui";
+import { GameModal, GameButtonSm, CardPreview } from "@/components/game/ui";
+import { sfx } from "@/game/sfx";
+import battleBg from "@/assets/battle-arena.jpg";
 
 const LOC_NAMES = ["esquerdo","do meio","direito"];
+const ROUND_SECONDS = 60;
 
 const Batalha = () => {
   const navigate = useNavigate();
@@ -21,29 +24,50 @@ const Batalha = () => {
   const [felina, setFelina] = useState<FelinaPend[]>([]);
   const [result, setResult] = useState<{v:Verdict; gold:number; xp:number; msg:string; ups:LevelUp[]}|null>(null);
   const [lvlups, setLvlups] = useState<LevelUp[]|null>(null);
-  const [tip, setTip] = useState("");
+  const [preview, setPreview] = useState<{def:CardDef; side:"left"|"right"}|null>(null);
+  const [timeLeft, setTimeLeft] = useState(ROUND_SECONDS);
+  const [turnLost, setTurnLost] = useState(false);
+  // uid das cartas recém-jogadas (para animar)
+  const [playedUids, setPlayedUids] = useState<Set<number>>(new Set());
+  // local que acabou de receber uma carta (para flash)
+  const [flashLoc, setFlashLoc] = useState<number|null>(null);
   const booted = useRef(false);
-  const tipTimer = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  // inicia a batalha uma vez
   useEffect(()=>{
     if(booted.current) return;
     booted.current = true;
     const s = loadSave();
     if(!meta || !s?.created){ navigate("/jogar"); return; }
-    const enemyDeck = CARDS.filter(c=>c.cls===meta.cls).map(c=>c.id); // deck completo da classe
+    const enemyDeck = CARDS.filter(c=>c.cls===meta.cls).map(c=>c.id);
     newBattle(s.deck, enemyDeck, meta);
     beginRound();
   }, []);
 
-  const showTip = (t:string)=>{
-    setTip(t);
-    clearTimeout(tipTimer.current);
-    tipTimer.current = setTimeout(()=>setTip(""), 3200);
+  // Timer da rodada
+  useEffect(()=>{
+    if(!B || B.over || felina.length || result) return;
+    setTimeLeft(ROUND_SECONDS);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(()=>{
+      setTimeLeft(t=>{
+        if(t<=1){ clearInterval(timerRef.current); handleTimerEnd(); return 0; }
+        return t-1;
+      });
+    }, 1000);
+    return ()=>clearInterval(timerRef.current);
+  }, [B?.round, felina.length, result]);
+
+  const handleTimerEnd = () => {
+    // mostra overlay "perdeu o turno" e encerra
+    setTurnLost(true);
+    sfx.turnLose();
+    setTimeout(()=>{ setTurnLost(false); endRound(); }, 2200);
   };
 
   const beginRound = ()=>{
     startRound();
+    setPlayedUids(new Set());
     if(starterOfRound()==="e"){
       botTurn();
       toast.info("O inimigo começou esta rodada.", {duration:1500});
@@ -54,13 +78,29 @@ const Batalha = () => {
 
   const clickLoc = (li:number)=>{
     if(!sel) return;
-    if(playCard("p", sel, li)){ setSel(null); tick(); }
-    else toast.error("Jogada inválida neste local.");
+    const ci = sel;
+    if(playCard("p", ci, li)){
+      sfx.card();
+      setSel(null);
+      setPlayedUids(prev=>new Set([...prev, ci.uid]));
+      setFlashLoc(li);
+      setTimeout(()=>setFlashLoc(null), 500);
+      tick();
+    } else toast.error("Jogada inválida neste local.");
+  };
+
+  const clickPlayerCard = (ci:CardInst, li:number)=>{
+    if(unplayCard("p", ci, li)){
+      toast.info(`${ci.def.name} devolvida à mão.`, {duration:1200});
+      setPlayedUids(prev=>{ const s=new Set(prev); s.delete(ci.uid); return s; });
+      tick();
+    }
   };
 
   const endRound = ()=>{
     if(!B || B.over || felina.length || result) return;
-    if(starterOfRound()==="p") botTurn(); // quem não começou joga por último
+    clearInterval(timerRef.current);
+    if(starterOfRound()==="p") botTurn();
     const pend = endRoundPhase1();
     if(pend.length){ setFelina(pend); tick(); return; }
     concludeRound();
@@ -76,10 +116,13 @@ const Batalha = () => {
   const concludeRound = ()=>{
     const v = endRoundPhase2();
     if(v) return finish(v);
+    setPlayedUids(new Set());
     beginRound();
   };
 
   const finish = (v:Verdict)=>{
+    clearInterval(timerRef.current);
+    if(v.winner==="p") sfx.win(); else if(v.winner==="e") sfx.lose();
     const s = loadSave()!;
     let gold = 0, xp = 0, msg = "";
     if(B.meta.mode==="story"){
@@ -91,7 +134,7 @@ const Batalha = () => {
         } else msg = "Revanche vencida — sem recompensas.";
       }
     } else {
-      xp = REWARDS.bot.xp; // XP mesmo perdendo
+      xp = REWARDS.bot.xp;
       if(v.winner==="p") gold = REWARDS.bot.gold;
     }
     s.gold += gold;
@@ -115,21 +158,31 @@ const Batalha = () => {
   const bcard = (ci:CardInst, side:Side, li:number)=>{
     const d = effDmg(ci, side, li);
     const delta = d - ci.def.dmg;
+    const wasPlayedNow = side==="p" && B.playedThisRound.p.some(e=>e.ci===ci && e.li===li);
+    const isNew = playedUids.has(ci.uid);
+    const previewSide:"left"|"right" = li===2 ? "left" : "right";
+    const enter = ()=>setPreview({def:ci.def, side:previewSide});
+    const leave = ()=>setPreview(null);
     if(side==="e" && ci.hidden) return (
-      <div key={ci.uid} className="w-14 h-[4.7rem] rounded border border-gold/40 bg-[repeating-linear-gradient(45deg,hsl(240_20%_14%),hsl(240_20%_14%)_6px,hsl(240_25%_9%)_6px,hsl(240_25%_9%)_12px)]
+      <div key={ci.uid} className="w-14 h-[4.7rem] rounded border border-gold/40
+        bg-[repeating-linear-gradient(45deg,hsl(240_20%_14%),hsl(240_20%_14%)_6px,hsl(240_25%_9%)_6px,hsl(240_25%_9%)_12px)]
         flex items-center justify-center text-lightning-glow text-xl font-bold">?</div>
     );
-    const tipTxt = `${ci.def.name} — Dano ${d}${ci.noAb ? " (habilidade removida)" : " — "+ci.def.txt}`;
     if(ci.def.token) return (
-      <div key={ci.uid} onClick={e=>{e.stopPropagation(); showTip(tipTxt);}}
-        className="w-14 rounded border border-magic/60 bg-gradient-to-b from-magic/25 to-card cursor-pointer animate-in zoom-in-75 duration-300">
+      <div key={ci.uid}
+        onMouseEnter={enter} onMouseLeave={leave}
+        className={`w-14 rounded border border-magic/60 bg-gradient-to-b from-magic/25 to-card cursor-help ${isNew?"card-play-anim":""}`}>
         <div className="h-[3.9rem] flex items-center justify-center text-2xl">{ci.def.id==="_sombra"?"🗡":"☽"}</div>
         <span className="block text-center text-[0.62rem] font-bold bg-black/80 py-0.5">{d}</span>
       </div>
     );
     return (
-      <div key={ci.uid} onClick={e=>{e.stopPropagation(); showTip(tipTxt);}}
-        className="w-14 relative rounded overflow-hidden border border-gold/40 cursor-pointer animate-in zoom-in-75 duration-300">
+      <div key={ci.uid}
+        onMouseEnter={enter} onMouseLeave={leave}
+        onClick={e=>{ e.stopPropagation(); if(wasPlayedNow) clickPlayerCard(ci, li); }}
+        className={`w-14 relative rounded overflow-hidden border cursor-pointer transition-all duration-150
+          ${isNew ? "card-play-anim" : ""}
+          ${wasPlayedNow ? "border-lightning-glow ring-1 ring-lightning-glow/60 hover:-translate-y-1" : "border-gold/40"}`}>
         <img src={cardImg(ci.def)} alt={ci.def.name} className="w-full block" draggable={false}/>
         <span className={`absolute bottom-0 inset-x-0 text-center text-[0.62rem] font-bold bg-black/85 py-0.5
           ${delta>0?"text-green-400":delta<0?"text-destructive":"text-foreground"}`}>{d}</span>
@@ -137,76 +190,104 @@ const Batalha = () => {
     );
   };
 
+  const timerColor = timeLeft<=10 ? "text-destructive" : timeLeft<=20 ? "text-flame-glow" : "text-gold-light";
+
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden select-none">
+    <div className="h-screen flex flex-col overflow-hidden select-none relative"
+      style={{
+        backgroundImage: `linear-gradient(hsl(var(--shadow-deep)/0.75), hsl(var(--shadow-deep)/0.9)), url(${battleBg})`,
+        backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
+
+      {/* overlay "perdeu o turno" */}
+      {turnLost && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center pointer-events-none">
+          <div className="turn-lost-overlay text-center">
+            <p className="text-6xl font-bold text-destructive font-decorative tracking-widest drop-shadow-[0_0_30px_rgba(220,38,38,0.8)]">
+              PERDEU O TURNO
+            </p>
+            <p className="text-xl text-muted-foreground mt-2 tracking-widest">O tempo esgotou</p>
+          </div>
+        </div>
+      )}
+
       {/* topo */}
-      <div className="flex justify-between items-center px-4 py-2 text-sm">
+      <div className="flex justify-between items-center px-4 py-2 text-sm bg-black/50 backdrop-blur-sm border-b border-gold/25">
         <span className="font-bold text-destructive tracking-wide">⚔ {B.meta.foe} — {grandTotal("e")}</span>
-        <span className="font-bold text-gold-light tracking-widest">RODADA {B.round} / 6</span>
+        <div className="flex flex-col items-center">
+          <span className="font-bold text-gold-light tracking-widest font-decorative">RODADA {B.round} / 6</span>
+          <span className={`font-bold text-xs tracking-widest ${timerColor}`}>⏱ {timeLeft}s</span>
+        </div>
         <span className="font-bold text-lightning-glow tracking-wide">Você — {grandTotal("p")}</span>
       </div>
       {B.forcedLoc.p!==null && (
-        <p className="text-destructive text-xs px-4 pb-1">
+        <p className="text-destructive text-xs px-4 pb-1 bg-black/40">
           Ceifador Entediado: você deve jogar no local {LOC_NAMES[B.forcedLoc.p]} (se possível).
         </p>
       )}
 
       {/* tabuleiro */}
-      <div className="flex-1 grid grid-cols-3 gap-3 px-3 pb-1 min-h-0">
+      <div className="flex-1 grid grid-cols-3 gap-3 px-3 pb-1 pt-2 min-h-0">
         {[0,1,2].map(li=>{
           const L = B.locs[li];
           const pt = locTotal("p",li), et = locTotal("e",li);
           const playable = !!sel && cardCost("p",sel.def)<=B.power.p && canPlayAt("p",li,sel.def);
+          const pFull = L.cards.p.length>=L.cap && !L.locked;
+          const eFull = L.cards.e.length>=L.cap && !L.locked;
+          const emptyP = Math.max(0, L.cap - L.cards.p.length);
+          const emptyE = Math.max(0, L.cap - L.cards.e.length);
+          const isFlash = flashLoc===li;
           return (
             <div key={li} onClick={()=>clickLoc(li)}
-              className={`relative flex flex-col rounded-lg border backdrop-blur-sm bg-card/40 overflow-hidden transition-all
+              className={`relative grid grid-rows-[1fr_auto_1fr] rounded-lg border-2 backdrop-blur-sm bg-black/45 overflow-hidden transition-colors
                 ${L.locked ? "border-destructive/60 bg-destructive/10"
-                  : playable ? "border-lightning-glow shadow-[0_0_18px_hsl(var(--lightning-glow)/0.35)] cursor-pointer"
-                  : "border-gold/30"}`}>
-              <span className="absolute top-1 right-2 text-[0.6rem] text-muted-foreground">{L.cards.p.length}/{L.cap}</span>
+                  : playable ? "border-lightning-glow shadow-[inset_0_0_30px_hsl(var(--lightning-glow)/0.25)] cursor-pointer"
+                  : "border-gold/40"}
+                ${isFlash ? "loc-flash" : ""}`}>
+              <span className="absolute top-1 right-2 text-[0.6rem] text-muted-foreground z-10 font-runic tracking-widest">
+                {L.cards.p.length}/{L.cap}
+              </span>
               {L.locked && (
-                <span className="absolute inset-0 flex items-center justify-center -rotate-12 text-destructive font-bold tracking-[0.2em] text-sm pointer-events-none z-10">
+                <span className="destroyed-label absolute inset-0 flex items-center justify-center -rotate-12 text-destructive font-bold tracking-[0.25em] text-base pointer-events-none z-10 font-decorative">
                   LOCAL DESTRUÍDO
                 </span>
               )}
-              <div className="flex-1 flex flex-wrap gap-1.5 content-start p-2 border-b border-dashed border-gold/25">
+              <div className={`flex flex-wrap gap-1.5 content-start p-2 border-b border-dashed border-gold/25 overflow-hidden rounded-t-md ${eFull?"loc-full":""}`}>
                 {L.cards.e.map(c=>bcard(c,"e",li))}
+                {!L.locked && Array.from({length:emptyE}).map((_,i)=>(
+                  <div key={"es"+i} className="rune-slot w-14 h-[4.7rem] text-lg">✦</div>
+                ))}
               </div>
-              <div className={`flex justify-between px-3 py-1 text-sm font-bold bg-black/60 border-y border-gold/25`}>
-                <span className={`text-lightning-glow ${pt>et?"drop-shadow-[0_0_8px_hsl(var(--lightning-glow))]":""}`}>{pt}</span>
-                <span className="text-destructive">{et}</span>
+              <div className="flex justify-between px-3 py-1 text-sm font-bold bg-black/70 border-y border-gold/25">
+                <span className={`text-lightning-glow tabular-nums ${pt>et?"drop-shadow-[0_0_8px_hsl(var(--lightning-glow))]":""}`}>{pt}</span>
+                <span className={`text-destructive tabular-nums ${et>pt?"drop-shadow-[0_0_8px_hsl(var(--destructive))]":""}`}>{et}</span>
               </div>
-              <div className="flex-1 flex flex-wrap gap-1.5 content-start p-2">
+              <div className={`flex flex-wrap gap-1.5 content-start p-2 overflow-hidden rounded-b-md ${pFull?"loc-full":""}`}>
                 {L.cards.p.map(c=>bcard(c,"p",li))}
+                {!L.locked && Array.from({length:emptyP}).map((_,i)=>(
+                  <div key={"ps"+i} className="rune-slot w-14 h-[4.7rem] text-lg">✦</div>
+                ))}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* dica */}
-      {tip && (
-        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 max-w-lg z-40 ornate-border bg-card/95 backdrop-blur-md rounded px-4 py-2 text-xs text-center">
-          {tip}
-        </div>
-      )}
-
       {/* mão + lateral */}
-      <div className="flex items-end gap-4 px-3 pb-3 pt-1">
-        <div className="flex-1 flex gap-2 overflow-x-auto py-2 min-h-[7.5rem]">
+      <div className="flex items-end gap-4 px-3 pb-3 pt-2 bg-black/50 backdrop-blur-sm border-t border-gold/25 h-[9.5rem] flex-shrink-0">
+        <div className="flex-1 flex gap-2 py-2 h-full items-end">
           {B.hands.p.map(ci=>{
             const cost = cardCost("p", ci.def);
             const cant = cost>B.power.p || ![0,1,2].some(li=>canPlayAt("p",li,ci.def));
+            const isSel = sel===ci;
             return (
               <div key={ci.uid}
-                onClick={()=>{
-                  if(sel===ci){ showTip(`${ci.def.name} — ${ci.def.txt}`); return; }
-                  setSel(ci);
-                  showTip(`${ci.def.name} (custo ${cost}) — toque em um local iluminado para invocar.`);
-                }}
-                className={`relative w-[4.7rem] flex-shrink-0 rounded-md overflow-hidden border cursor-pointer transition-all duration-150
-                  ${sel===ci ? "border-lightning-glow -translate-y-2 shadow-[0_0_18px_hsl(var(--lightning-glow)/0.55)]" : "border-gold/40 hover:-translate-y-2"}
-                  ${cant ? "opacity-40" : ""}`}>
+                onMouseEnter={()=>setPreview({def:ci.def, side:"right"})} onMouseLeave={()=>setPreview(null)}
+                onClick={()=>{ if(isSel){ setSel(null); return; } setSel(ci); }}
+                className={`relative w-[4.7rem] flex-shrink-0 rounded-md overflow-hidden border-2 cursor-pointer transition-all duration-150
+                  ${isSel ? "border-lightning-glow -translate-y-3 scale-110 shadow-[0_0_22px_hsl(var(--lightning-glow)/0.7)]"
+                          : "border-gold/40 hover:-translate-y-2"}
+                  ${cant ? "opacity-45" : ""}`}>
                 <img src={cardImg(ci.def)} alt={ci.def.name} className="w-full block" draggable={false}/>
                 <span className="absolute top-1 left-1 w-5 h-5 rounded-full bg-gradient-to-br from-cyan-200 to-cyan-800
                   text-[0.68rem] font-bold text-cyan-950 flex items-center justify-center shadow-[0_0_8px_hsl(var(--lightning-glow)/0.7)]">
@@ -230,7 +311,9 @@ const Batalha = () => {
         </div>
       </div>
 
-      {/* Deusa Felina: escolha de movimento */}
+      <CardPreview def={preview?.def ?? null} side={preview?.side ?? "right"}/>
+
+      {/* Deusa Felina */}
       <GameModal open={felina.length>0}>
         {felina.length>0 && (
           <>
@@ -250,22 +333,29 @@ const Batalha = () => {
         )}
       </GameModal>
 
-      {/* espólios */}
+      {/* Espólios */}
       <GameModal open={!!result}>
         {result && (
           <>
-            <h3 className="text-xl font-bold text-gold-light text-center mb-2">Espólios da batalha</h3>
-            <p className={`text-4xl font-bold text-center mb-3 tracking-wider
+            <h3 className="text-xl font-bold text-gold-light text-center mb-2 font-decorative">Espólios da batalha</h3>
+            <p className={`text-4xl font-bold text-center mb-4 tracking-widest font-decorative
               ${result.v.winner==="p" ? "text-green-400 drop-shadow-[0_0_16px_rgba(74,222,128,0.5)]"
                 : result.v.winner==="e" ? "text-destructive" : "text-muted-foreground"}`}>
               {result.v.winner==="p" ? "VITÓRIA" : result.v.winner==="e" ? "DERROTA" : "EMPATE"}
             </p>
-            <p className="text-muted-foreground text-center text-sm mb-4">
-              Locais: {result.v.wp} x {result.v.we} — Dano total: {result.v.tp} x {result.v.te}
-            </p>
-            <div className="flex gap-8 justify-center font-bold mb-4">
-              <span>Ouro <span className="text-gold-light">+{result.gold}</span></span>
-              <span>XP <span className="text-gold-light">+{result.xp}</span></span>
+            <div className="flex flex-nowrap gap-3 justify-center items-stretch mb-4">
+              {[
+                {icon:"🏰", label:"Locais",     val:`${result.v.wp} × ${result.v.we}`, color:"text-lightning-glow"},
+                {icon:"⚔",  label:"Dano total", val:`${result.v.tp} × ${result.v.te}`, color:"text-flame-glow"},
+                {icon:"🪙", label:"Ouro",       val:`+${result.gold}`,                   color:"text-gold-light"},
+                {icon:"✦",  label:"XP",         val:`+${result.xp}`,                     color:"text-magic-glow"},
+              ].map(s=>(
+                <div key={s.label} className="flex-1 min-w-[5.5rem] rounded-md border border-gold/40 bg-black/50 px-2 py-2 flex flex-col items-center gap-0.5">
+                  <span className="text-xl leading-none">{s.icon}</span>
+                  <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{s.label}</span>
+                  <span className={`text-sm font-bold tabular-nums ${s.color}`}>{s.val}</span>
+                </div>
+              ))}
             </div>
             {result.msg && <p className="text-lightning-glow text-center text-sm mb-4">{result.msg}</p>}
             <div className="flex justify-center">
@@ -275,12 +365,12 @@ const Batalha = () => {
         )}
       </GameModal>
 
-      {/* level up (estilo espólio) */}
+      {/* Level up */}
       <GameModal open={!!lvlups?.length}>
         {!!lvlups?.length && (
           <>
-            <h3 className="text-xl font-bold text-gold-light text-center mb-2">Subiu de nível!</h3>
-            <p className="text-4xl font-bold text-center text-green-400 drop-shadow-[0_0_16px_rgba(74,222,128,0.5)] mb-4">
+            <h3 className="text-xl font-bold text-gold-light text-center mb-2 font-decorative">Subiu de nível!</h3>
+            <p className="text-4xl font-bold text-center text-green-400 drop-shadow-[0_0_16px_rgba(74,222,128,0.5)] mb-4 font-decorative">
               Nível {lvlups[0].level}
             </p>
             <p className="text-center font-bold mb-6">

@@ -23,7 +23,7 @@ export interface Battle {
   decks:Record<Side,CardInst[]>; hands:Record<Side,CardInst[]>;
   locs:Loc[];
   destroyed:Record<Side,CardDef[]>; destroyedTotal:number;
-  playedThisRound:Record<Side,{ci:CardInst,li:number}[]>;
+  playedThisRound:Record<Side,{ci:CardInst,li:number,cost:number}[]>;
   playedLastAny:Record<Side,boolean>;
   log:string[];
 }
@@ -161,7 +161,7 @@ export function playCard(side:Side, ci:CardInst, li:number):boolean{
   const L = B.locs[li];
   L.cards[side].push(ci);
   L.playedNow[side] = true;
-  B.playedThisRound[side].push({ci, li});
+  B.playedThisRound[side].push({ci, li, cost});
   if(B.hideNext[side]){ ci.hidden=true; B.hideNext[side]=false; }
   if(L.playDebuff[side]>0) permDebuff(ci, side, li, L.playDebuff[side]);
   onPlay(ci, side, li);
@@ -433,4 +433,25 @@ export function botTurn(){
     const pick = top.find(t=>locTotal("e",t.li) - locTotal("p",t.li) < 2500) || top[0];
     playCard("e", pick.ci, pick.li);
   }
+}
+
+/** Retira uma carta jogada nesta rodada, devolvendo-a à mão e reembolsando o custo.
+ *  Efeitos permanentes já aplicados (destruições, tokens, buffs em outras cartas) não são revertidos. */
+export function unplayCard(side:Side, ci:CardInst, li:number):boolean{
+  const entries = B.playedThisRound[side];
+  const idx = entries.findIndex(e=>e.ci===ci && e.li===li);
+  if(idx<0) return false;
+  const entry = entries[idx];
+  const L = B.locs[li];
+  const cardIdx = L.cards[side].indexOf(ci);
+  if(cardIdx<0) return false;
+  L.cards[side].splice(cardIdx, 1);
+  B.power[side] += entry.cost;
+  ci.buff = 0; ci.noAb = false; ci.hidden = false; ci.felinaPending = false;
+  ci.vazioUsed = false; ci.luaUsed = false;
+  B.hands[side].push(ci);
+  entries.splice(idx, 1);
+  L.playedNow[side] = entries.some(e=>e.li===li);
+  log(`${side==="p"?"Você":"Inimigo"} retirou ${ci.def.name}.`);
+  return true;
 }
