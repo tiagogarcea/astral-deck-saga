@@ -227,7 +227,7 @@ const Batalha = () => {
       )}
 
       {/* tabuleiro */}
-      <div className="flex-1 grid grid-cols-3 gap-3 px-3 pb-1 pt-2 min-h-0">
+      <div className="flex-1 grid grid-cols-3 gap-2 px-2 pb-1 pt-2 min-h-0">
         {[0,1,2].map(li=>{
           const L = B.locs[li];
           const pt = locTotal("p",li), et = locTotal("e",li);
@@ -237,35 +237,51 @@ const Batalha = () => {
           const emptyP = Math.max(0, L.cap - L.cards.p.length);
           const emptyE = Math.max(0, L.cap - L.cards.e.length);
           const isFlash = flashLoc===li;
+          const winning = pt > et;
           return (
             <div key={li} onClick={()=>clickLoc(li)}
-              className={`relative grid grid-rows-[1fr_auto_1fr] rounded-lg border-2 backdrop-blur-sm bg-black/45 overflow-hidden transition-colors
+              className={`relative flex flex-col rounded-xl border-2 overflow-hidden transition-all duration-150
                 ${L.locked ? "border-destructive/60 bg-destructive/10"
-                  : playable ? "border-lightning-glow shadow-[inset_0_0_30px_hsl(var(--lightning-glow)/0.25)] cursor-pointer"
-                  : "border-gold/40"}
-                ${isFlash ? "loc-flash" : ""}`}>
-              <span className="absolute top-1 right-2 text-[0.6rem] text-muted-foreground z-10 font-runic tracking-widest">
-                {L.cards.p.length}/{L.cap}
-              </span>
+                  : playable ? "border-lightning-glow shadow-[0_0_20px_hsl(var(--lightning-glow)/0.4),inset_0_0_40px_hsl(var(--lightning-glow)/0.12)] cursor-pointer"
+                  : winning ? "border-gold/70 shadow-[0_0_10px_hsl(var(--gold-light)/0.25)]"
+                  : "border-white/15"}
+                ${isFlash ? "loc-flash" : ""}
+                bg-black/40 backdrop-blur-sm`}>
+
               {L.locked && (
-                <span className="destroyed-label absolute inset-0 flex items-center justify-center -rotate-12 text-destructive font-bold tracking-[0.25em] text-base pointer-events-none z-10 font-decorative">
+                <span className="destroyed-label absolute inset-0 flex items-center justify-center -rotate-12 text-destructive font-bold tracking-[0.25em] text-sm pointer-events-none z-20 font-decorative">
                   LOCAL DESTRUÍDO
                 </span>
               )}
-              <div className={`flex flex-wrap gap-1.5 content-start p-2 border-b border-dashed border-gold/25 overflow-hidden rounded-t-md ${eFull?"loc-full":""}`}>
+
+              {/* metade inimigo — cartas coladas na borda central */}
+              <div className={`flex-1 flex flex-wrap justify-center gap-1 content-end pb-1 pt-2 px-1 overflow-hidden ${eFull?"loc-full":""}`}>
                 {L.cards.e.map(c=>bcard(c,"e",li))}
                 {!L.locked && Array.from({length:emptyE}).map((_,i)=>(
-                  <div key={"es"+i} className="rune-slot w-14 h-[4.7rem] text-lg">✦</div>
+                  <div key={"es"+i} className="rune-slot w-12 h-[4rem] text-base opacity-50">✦</div>
                 ))}
               </div>
-              <div className="flex justify-between px-3 py-1 text-sm font-bold bg-black/70 border-y border-gold/25">
-                <span className={`text-lightning-glow tabular-nums ${pt>et?"drop-shadow-[0_0_8px_hsl(var(--lightning-glow))]":""}`}>{pt}</span>
-                <span className={`text-destructive tabular-nums ${et>pt?"drop-shadow-[0_0_8px_hsl(var(--destructive))]":""}`}>{et}</span>
+
+              {/* barra central — score estilo Snap */}
+              <div className={`flex items-center justify-between px-2 py-0.5 text-xs font-bold flex-shrink-0
+                ${L.locked ? "bg-destructive/30" : "bg-black/80"}
+                border-y ${winning ? "border-gold/60" : "border-white/10"}`}>
+                <span className={`tabular-nums ${pt>et ? "text-lightning-glow drop-shadow-[0_0_6px_hsl(var(--lightning-glow))]" : "text-white/50"}`}>
+                  {pt}
+                </span>
+                <span className="text-[0.5rem] uppercase tracking-widest text-white/30 mx-1">
+                  {["ESQ","MEIO","DIR"][li]}
+                </span>
+                <span className={`tabular-nums ${et>pt ? "text-destructive drop-shadow-[0_0_6px_hsl(var(--destructive))]" : "text-white/50"}`}>
+                  {et}
+                </span>
               </div>
-              <div className={`flex flex-wrap gap-1.5 content-start p-2 overflow-hidden rounded-b-md ${pFull?"loc-full":""}`}>
+
+              {/* metade jogador — cartas coladas na borda central */}
+              <div className={`flex-1 flex flex-wrap justify-center gap-1 content-start pt-1 pb-2 px-1 overflow-hidden ${pFull?"loc-full":""}`}>
                 {L.cards.p.map(c=>bcard(c,"p",li))}
                 {!L.locked && Array.from({length:emptyP}).map((_,i)=>(
-                  <div key={"ps"+i} className="rune-slot w-14 h-[4.7rem] text-lg">✦</div>
+                  <div key={"ps"+i} className="rune-slot w-12 h-[4rem] text-base opacity-50">✦</div>
                 ))}
               </div>
             </div>

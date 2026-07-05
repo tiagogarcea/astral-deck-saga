@@ -51,11 +51,10 @@ function noise(dur: number, vol = 0.15, delay = 0) {
 export const sfx = {
   click()    { beep(440, 0.04, 0.2, 'sine', 0); beep(660, 0.05, 0.2, 'sine', 0.05); },
   card() {
-    // impacto surdo de carta (thud grave + ruído de papel)
-    noise(0.06, 0.28, 0);        // burst de ruído inicial (papel)
-    beep(180, 0.12, 0.3, 'sine', 0);   // grave surdo
-    beep(320, 0.06, 0.15, 'sine', 0.01); // harmônico leve
-    noise(0.08, 0.12, 0.06);     // cauda de papel
+    // snap de carta/papel: burst de ruído curto + click grave
+    noise(0.04, 0.45, 0);
+    noise(0.03, 0.25, 0.03);
+    beep(120, 0.08, 0.18, 'sine', 0);
   },
   win()      { beep(523, 0.12, 0.35, 'sine', 0); beep(659, 0.12, 0.35, 'sine', 0.14); beep(784, 0.28, 0.4, 'sine', 0.28); },
   lose()     { beep(392, 0.14, 0.3, 'sine', 0); beep(330, 0.14, 0.3, 'sine', 0.16); beep(262, 0.3, 0.35, 'sine', 0.32); },
