@@ -86,5 +86,5 @@ export const REWARDS = { bot:{gold:70, xp:50}, online:{gold:140, xp:100}, friend
 export const DECK_SIZE = 20;
 export const PER_RANK = 4; // 20 cartas = 4 de cada rank (interpretação; ajuste aqui)
 
-export const cardImg = (def:CardDef)=> def.token ? "" : `/cards/${def.id}.jpg`;
+export const cardImg = (def:CardDef)=> def.token ? "" : `/cards/${def.id}.png`;
 export const artImg  = (id:string)=> `/cards/${id}-art.jpg`;
