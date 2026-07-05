@@ -343,19 +343,34 @@ const Batalha = () => {
                 : result.v.winner==="e" ? "text-destructive" : "text-muted-foreground"}`}>
               {result.v.winner==="p" ? "VITÓRIA" : result.v.winner==="e" ? "DERROTA" : "EMPATE"}
             </p>
-            <div className="flex flex-nowrap gap-3 justify-center items-stretch mb-4">
-              {[
-                {icon:"🏰", label:"Locais",     val:`${result.v.wp} × ${result.v.we}`, color:"text-lightning-glow"},
-                {icon:"⚔",  label:"Dano total", val:`${result.v.tp} × ${result.v.te}`, color:"text-flame-glow"},
-                {icon:"🪙", label:"Ouro",       val:`+${result.gold}`,                   color:"text-gold-light"},
-                {icon:"✦",  label:"XP",         val:`+${result.xp}`,                     color:"text-magic-glow"},
-              ].map(s=>(
-                <div key={s.label} className="flex-1 min-w-[5.5rem] rounded-md border border-gold/40 bg-black/50 px-2 py-2 flex flex-col items-center gap-0.5">
-                  <span className="text-xl leading-none">{s.icon}</span>
-                  <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">{s.label}</span>
-                  <span className={`text-sm font-bold tabular-nums ${s.color}`}>{s.val}</span>
-                </div>
-              ))}
+            {/* grid 2×2: locais/dano em cima, ouro/xp embaixo */}
+            <div className="grid grid-cols-2 gap-3 mb-4 w-full max-w-xs mx-auto">
+              {/* Locais */}
+              <div className="rounded-md border border-gold/40 bg-black/50 px-3 py-3 flex flex-col items-center gap-1">
+                <span className="text-2xl leading-none">🏰</span>
+                <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">Locais</span>
+                <span className="text-lg font-bold tabular-nums text-lightning-glow">{result.v.wp} × {result.v.we}</span>
+              </div>
+              {/* Dano total — dois valores empilhados */}
+              <div className="rounded-md border border-gold/40 bg-black/50 px-3 py-3 flex flex-col items-center gap-1">
+                <span className="text-2xl leading-none">⚔️</span>
+                <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">Dano total</span>
+                <span className="text-sm font-bold tabular-nums text-green-400 leading-tight">{result.v.tp.toLocaleString()}</span>
+                <span className="text-[0.6rem] text-muted-foreground leading-none">vs</span>
+                <span className="text-sm font-bold tabular-nums text-destructive leading-tight">{result.v.te.toLocaleString()}</span>
+              </div>
+              {/* Ouro */}
+              <div className="rounded-md border border-gold/40 bg-black/50 px-3 py-3 flex flex-col items-center gap-1">
+                <span className="text-2xl leading-none">🪙</span>
+                <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">Ouro</span>
+                <span className="text-lg font-bold tabular-nums text-gold-light">+{result.gold}</span>
+              </div>
+              {/* XP */}
+              <div className="rounded-md border border-gold/40 bg-black/50 px-3 py-3 flex flex-col items-center gap-1">
+                <span className="text-2xl leading-none">✨</span>
+                <span className="text-[0.6rem] uppercase tracking-widest text-muted-foreground">XP</span>
+                <span className="text-lg font-bold tabular-nums text-magic-glow">+{result.xp}</span>
+              </div>
             </div>
             {result.msg && <p className="text-lightning-glow text-center text-sm mb-4">{result.msg}</p>}
             <div className="flex justify-center">
