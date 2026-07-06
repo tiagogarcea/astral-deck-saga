@@ -60,9 +60,9 @@ export function tryLogin(mail: string, password: string): SaveState | null {
   return acc;
 }
 
-export function isAuthed(): boolean { return sessionStorage.getItem(AUTH_KEY) === "1"; }
-export function login()  { sessionStorage.setItem(AUTH_KEY, "1"); }
-export function logout() { sessionStorage.removeItem(AUTH_KEY); }
+export function isAuthed(): boolean { return localStorage.getItem(AUTH_KEY) === "1"; }
+export function login()  { localStorage.setItem(AUTH_KEY, "1"); }
+export function logout() { localStorage.removeItem(AUTH_KEY); }
 
 export function newSave(name: string, mail: string, password: string, avatar: string = "Guerreiro"): SaveState {
   return { name, mail, password, avatar, gold: 0, level: 1, xp: 0,
