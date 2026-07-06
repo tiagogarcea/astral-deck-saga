@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import splashBattle from "@/assets/splash-battle.jpg";
-import { loadSave, login, isAuthed } from "@/game/save";
+import { isAuthed, tryLogin as doLogin } from "@/game/save";
 
 const Splash = () => {
   const navigate = useNavigate();
@@ -12,17 +12,13 @@ const Splash = () => {
 
   useEffect(()=>{
     setIsLoaded(true);
-    const s = loadSave();
-    if(s?.created && isAuthed()) navigate("/menu");
+    if(isAuthed()) navigate("/menu");
   }, []);
 
   const tryLogin = () => {
-    const s = loadSave();
-    if(!s?.created) return toast.error("Ainda não há conta neste navegador. Crie uma nova.");
-    if(s.mail.trim().toLowerCase()!==mail.trim().toLowerCase() || s.password!==pass){
-      return toast.error("E-mail ou senha incorretos.");
-    }
-    login();
+    if(!mail.trim() || !pass) return toast.error("Preencha e-mail e senha.");
+    const acc = doLogin(mail.trim(), pass);
+    if(!acc) return toast.error("E-mail ou senha incorretos.");
     navigate("/menu");
   };
 
