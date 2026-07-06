@@ -30,7 +30,7 @@ const Bots = () => {
         <div
           className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
           style={{
-            backgroundImage: `url(/cards/${STORY[hovered].img}-art.jpg)`,
+            backgroundImage: `url(/cards/${STORY[hovered].img}.png)`,
             backgroundSize: "cover", backgroundPosition: "center top",
             opacity: 0.18, filter: "blur(3px) saturate(1.4)",
           }}
@@ -64,7 +64,7 @@ const Bots = () => {
               >
                 {/* retrato circular do boss */}
                 <div
-                  className="relative w-28 h-28 rounded-full overflow-hidden transition-all duration-200"
+                  className="relative w-28 h-36 rounded-xl overflow-hidden transition-all duration-200 bg-transparent"
                   style={{
                     border: `3px solid ${c.border}`,
                     boxShadow: isHov
@@ -73,9 +73,9 @@ const Bots = () => {
                   }}
                 >
                   <img
-                    src={`/cards/${st.img}-art.jpg`}
+                    src={`/cards/${st.img}.png`}
                     alt={st.boss}
-                    className="w-full h-full object-cover object-top"
+                    className="w-full h-full object-contain object-center"
                     draggable={false}
                   />
                   {/* gradiente sobre o retrato */}

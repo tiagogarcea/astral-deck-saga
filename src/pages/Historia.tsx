@@ -144,7 +144,7 @@ const Historia = () => {
           <div
             className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
             style={{
-              backgroundImage: `url(/cards/${STORY[hovered].img}-art.jpg)`,
+              backgroundImage: `url(/cards/${STORY[hovered].img}.png)`,
               backgroundSize: "cover", backgroundPosition: "center",
               opacity: 0.13, filter: "blur(2px) saturate(1.5)",
             }}
