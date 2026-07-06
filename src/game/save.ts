@@ -12,6 +12,25 @@ export interface SaveState {
 const ACCOUNTS_KEY = "arcanum_accounts_v1";
 const ACTIVE_KEY   = "arcanum_active_v1";
 const AUTH_KEY     = "arcanum_authed";
+const OLD_KEY      = "arcanum_v1"; // chave do formato antigo — migração automática
+
+/** Migra conta do formato antigo (uma conta só) para o novo (lista) */
+function migrateOldSave() {
+  const raw = localStorage.getItem(OLD_KEY);
+  if (!raw) return;
+  try {
+    const old: SaveState = JSON.parse(raw);
+    if (!old?.mail || !old?.created) return;
+    const all = getAllAccounts();
+    if (!all.find(a => a.mail === old.mail)) {
+      all.push(old);
+      saveAllAccounts(all);
+    }
+    localStorage.setItem(ACTIVE_KEY, old.mail);
+    localStorage.setItem(AUTH_KEY, "1");
+    localStorage.removeItem(OLD_KEY);
+  } catch { /* ignora */ }
+}
 
 function getAllAccounts(): SaveState[] {
   try { return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || "[]"); } catch { return []; }
@@ -23,6 +42,7 @@ function saveAllAccounts(accounts: SaveState[]) {
 /** Retorna a conta ativa (logada) ou null */
 export function loadSave(): SaveState | null {
   try {
+    migrateOldSave(); // migra save antigo se existir
     const mail = localStorage.getItem(ACTIVE_KEY);
     if (!mail) return null;
     const all = getAllAccounts();
@@ -37,6 +57,7 @@ export function saveState(s: SaveState) {
   if (idx >= 0) all[idx] = s; else all.push(s);
   saveAllAccounts(all);
   localStorage.setItem(ACTIVE_KEY, s.mail);
+  localStorage.setItem(AUTH_KEY, "1"); // garante auth persistente
 }
 
 export function clearSave() {
@@ -60,7 +81,10 @@ export function tryLogin(mail: string, password: string): SaveState | null {
   return acc;
 }
 
-export function isAuthed(): boolean { return localStorage.getItem(AUTH_KEY) === "1"; }
+export function isAuthed(): boolean {
+  migrateOldSave(); // garante migração mesmo antes do loadSave
+  return localStorage.getItem(AUTH_KEY) === "1";
+}
 export function login()  { localStorage.setItem(AUTH_KEY, "1"); }
 export function logout() { localStorage.removeItem(AUTH_KEY); }
 
