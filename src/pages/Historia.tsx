@@ -128,10 +128,12 @@ const Historia = () => {
   const unlocked = (i: number) => i === 0 || s.storyDone[i - 1];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden select-none"
+    <div className="h-screen flex flex-col overflow-hidden select-none relative"
       style={{
-        background: "radial-gradient(ellipse at 20% 80%, rgba(60,20,100,0.5), transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(100,40,10,0.4), transparent 55%), hsl(240 20% 6%)"
+        backgroundImage: `linear-gradient(hsl(240 30% 5% / 0.72), hsl(260 40% 8% / 0.85)), url(${storyMap})`,
+        backgroundSize: "cover", backgroundPosition: "center",
       }}>
+
 
       {/* cabeçalho */}
       <div className="w-full flex items-center justify-between px-6 py-4 border-b border-gold/25 bg-black/40 backdrop-blur-md z-10">
