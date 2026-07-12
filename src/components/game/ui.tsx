@@ -1,6 +1,31 @@
 import { type ReactNode } from "react";
 import { type CardDef, cardImg, CARD_PRICE, PER_RANK, DECK_SIZE, BY_ID } from "@/game/data";
 import { AVATAR_PATHS } from "@/game/save";
+import mysticHall from "@/assets/mystic-hall.jpg";
+
+// ---- fundo místico compartilhado (corredor gótico com runas) ----
+export const MysticBG = ({ tint = "purple", intensity = 0.72 }: { tint?: "purple" | "amber" | "cyan" | "crimson"; intensity?: number }) => {
+  const tints: Record<string, string> = {
+    purple:  "linear-gradient(180deg, hsl(260 40% 6% / TINT), hsl(270 45% 10% / TINT))",
+    amber:   "linear-gradient(180deg, hsl(20 45% 6% / TINT),  hsl(30 55% 10% / TINT))",
+    cyan:    "linear-gradient(180deg, hsl(200 50% 5% / TINT), hsl(190 55% 10% / TINT))",
+    crimson: "linear-gradient(180deg, hsl(350 45% 6% / TINT), hsl(0 55% 10% / TINT))",
+  };
+  const overlay = tints[tint].replace(/TINT/g, String(intensity));
+  return (
+    <>
+      <div className="fixed inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `url(${mysticHall})` }} />
+      <div className="fixed inset-0 -z-10 pointer-events-none" style={{ background: overlay }} />
+      <div className="fixed inset-0 -z-10 pointer-events-none" style={{
+        background:
+          "radial-gradient(ellipse at 15% 85%, hsl(var(--magic-glow) / 0.18), transparent 55%)," +
+          "radial-gradient(ellipse at 85% 15%, hsl(var(--flame-glow) / 0.14), transparent 55%)," +
+          "radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%)"
+      }} />
+    </>
+  );
+};
+
 
 // ---- silhueta de perfil ----
 export const AvatarIcon = ({cls, size=44, selected=false, onClick}:{cls:string; size?:number; selected?:boolean; onClick?:()=>void}) => (

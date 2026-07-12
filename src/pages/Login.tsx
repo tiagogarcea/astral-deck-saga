@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CARDS, BY_ID, DECK_SIZE, PER_RANK } from "@/game/data";
 import { newSave, saveState, login, tryLogin, emailExists } from "@/game/save";
-import { CardThumb, RankCounts, PageHead, GameButtonSm } from "@/components/game/ui";
+import { CardThumb, RankCounts, PageHead, GameButtonSm, MysticBG } from "@/components/game/ui";
 
 type Step = "home" | "auth" | "nick" | "cards" | "login";
 
@@ -62,7 +62,9 @@ const Login = () => {
 
   // ---- Tela de seleção de cartas ----
   if (step === "cards") return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <MysticBG tint="purple" />
+
       <PageHead title="Monte seu deck inicial">
         <RankCounts ids={pick}/>
         <GameButtonSm disabled={pick.length !== DECK_SIZE} onClick={confirmDeck}>
@@ -83,7 +85,9 @@ const Login = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <MysticBG tint="purple" />
+
       <div className="ornate-border bg-card/90 backdrop-blur-md rounded-lg p-10 max-w-lg w-full magical-glow">
 
         {/* ---- Tela inicial: escolher criar ou entrar ---- */}

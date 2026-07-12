@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { loadSave } from "@/game/save";
 import { BY_ID, cardImg } from "@/game/data";
+import { MysticBG } from "@/components/game/ui";
+
 
 const Deck = () => {
   const navigate = useNavigate();
@@ -9,8 +11,10 @@ const Deck = () => {
   const fan = s.deck.slice(0,8);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <div className="ornate-border magical-glow bg-gradient-to-b from-card to-[hsl(var(--shadow-deep))] rounded-lg p-10 max-w-3xl w-full">
+    <div className="min-h-screen flex items-center justify-center p-6 relative">
+      <MysticBG tint="amber" />
+      <div className="ornate-border magical-glow bg-gradient-to-b from-card/90 to-[hsl(var(--shadow-deep)/0.9)] backdrop-blur-md rounded-lg p-10 max-w-3xl w-full relative">
+
         <h1 className="text-4xl font-bold text-gold-light text-center mb-8 tracking-wider">Seu Deck</h1>
 
         {/* leque de cartas */}

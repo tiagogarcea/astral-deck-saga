@@ -195,9 +195,13 @@ const Batalha = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden select-none relative"
       style={{
-        backgroundImage: `linear-gradient(hsl(var(--shadow-deep)/0.75), hsl(var(--shadow-deep)/0.9)), url(${battleBg})`,
+        backgroundImage: `linear-gradient(hsl(var(--shadow-deep)/0.65), hsl(var(--shadow-deep)/0.85)), url(${battleBg})`,
         backgroundSize: 'cover', backgroundPosition: 'center'
       }}>
+      {/* vignette */}
+      <div className="pointer-events-none absolute inset-0" style={{
+        background: "radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%)"
+      }}/>
 
       {/* overlay "perdeu o turno" */}
       {turnLost && (
@@ -211,20 +215,33 @@ const Batalha = () => {
         </div>
       )}
 
-      {/* topo */}
-      <div className="flex justify-between items-center px-4 py-2 text-sm bg-black/50 backdrop-blur-sm border-b border-gold/25">
-        <span className="font-bold text-destructive tracking-wide">⚔ {B.meta.foe} — {grandTotal("e")}</span>
-        <div className="flex flex-col items-center">
-          <span className="font-bold text-gold-light tracking-widest font-decorative">RODADA {B.round} / 6</span>
-          <span className={`font-bold text-xs tracking-widest ${timerColor}`}>⏱ {timeLeft}s</span>
+      {/* topo — placa ornamental */}
+      <div className="relative flex justify-between items-center px-6 py-2.5 text-sm border-b-2 border-gold/40
+        bg-gradient-to-b from-black/80 via-black/70 to-black/50 backdrop-blur-md
+        shadow-[0_4px_20px_rgba(0,0,0,0.6),inset_0_-1px_0_hsl(var(--gold-light)/0.3)]">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-destructive shadow-[0_0_10px_hsl(var(--destructive))]"/>
+          <span className="font-bold text-destructive tracking-wide font-decorative">⚔ {B.meta.foe}</span>
+          <span className="text-white/40 mx-1">·</span>
+          <span className="font-bold text-destructive tabular-nums">{grandTotal("e")}</span>
         </div>
-        <span className="font-bold text-lightning-glow tracking-wide">Você — {grandTotal("p")}</span>
+        <div className="flex flex-col items-center px-4 py-0.5 rounded border border-gold/50 bg-black/60 shadow-[inset_0_0_16px_hsl(var(--gold-ornate)/0.3)]">
+          <span className="font-bold text-gold-light tracking-widest font-decorative text-xs">RODADA {B.round} / 6</span>
+          <span className={`font-bold text-xs tracking-widest tabular-nums ${timerColor}`}>⏱ {timeLeft}s</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-lightning-glow tabular-nums">{grandTotal("p")}</span>
+          <span className="text-white/40 mx-1">·</span>
+          <span className="font-bold text-lightning-glow tracking-wide font-decorative">Você ⚔</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-lightning-glow shadow-[0_0_10px_hsl(var(--lightning-glow))]"/>
+        </div>
       </div>
       {B.forcedLoc.p!==null && (
-        <p className="text-destructive text-xs px-4 pb-1 bg-black/40">
+        <p className="text-destructive text-xs px-4 pb-1 bg-black/40 relative">
           Ceifador Entediado: você deve jogar no local {LOC_NAMES[B.forcedLoc.p]} (se possível).
         </p>
       )}
+
 
       {/* tabuleiro */}
       <div className="flex-1 grid grid-cols-3 gap-2 px-2 pb-1 pt-2 min-h-0">

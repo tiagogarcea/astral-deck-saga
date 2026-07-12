@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { BY_ID, DECK_SIZE, PER_RANK, cardImg, type CardDef } from "@/game/data";
 import { loadSave, saveState } from "@/game/save";
-import { CardThumb, RankCounts, PageHead, GameButtonSm, CardPreview } from "@/components/game/ui";
+import { CardThumb, RankCounts, PageHead, GameButtonSm, CardPreview, MysticBG } from "@/components/game/ui";
 
 const DeckEditar = () => {
   const navigate = useNavigate();
@@ -34,7 +34,9 @@ const DeckEditar = () => {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden relative">
+      <MysticBG tint="purple" />
+
       <PageHead title="Editar deck">
         <RankCounts ids={pick}/>
         <GameButtonSm disabled={pick.length!==DECK_SIZE} onClick={save}>Salvar</GameButtonSm>
