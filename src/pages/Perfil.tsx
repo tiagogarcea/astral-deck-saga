@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loadSave, saveState } from "@/game/save";
 import { CLASSES } from "@/game/data";
-import { AvatarIcon, PageHead, GameButtonSm } from "@/components/game/ui";
+import { AvatarIcon, PageHead, GameButtonSm, MysticBG } from "@/components/game/ui";
 
 const Perfil = () => {
   const navigate = useNavigate();
@@ -11,7 +11,9 @@ const Perfil = () => {
   if(!s?.created){ navigate("/login"); return null; }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <MysticBG tint="cyan" />
+
       <PageHead title="Imagem de perfil"/>
       <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6">
         <AvatarIcon cls={preview} size={72}/>

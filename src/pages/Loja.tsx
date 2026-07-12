@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { CARDS, CARD_PRICE, cardImg, type CardDef } from "@/game/data";
 import { loadSave, saveState, type SaveState } from "@/game/save";
-import { CardThumb, PageHead, GameButtonSm, GameModal, GoldBadge } from "@/components/game/ui";
+import { CardThumb, PageHead, GameButtonSm, GameModal, GoldBadge, MysticBG } from "@/components/game/ui";
 
 const Loja = () => {
   const navigate = useNavigate();
@@ -26,7 +26,9 @@ const Loja = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col relative">
+      <MysticBG tint="amber" />
+
       <PageHead title="Loja de cartas">
         <GoldBadge gold={s.gold}/>
         <GameButtonSm onClick={()=>navigate("/deck")}>Voltar</GameButtonSm>
