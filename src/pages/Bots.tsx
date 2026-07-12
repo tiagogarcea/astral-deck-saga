@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { STORY, BY_ID, cardImg } from "@/game/data";
 import { loadSave } from "@/game/save";
-import { GameButtonSm, GameModal } from "@/components/game/ui";
+import { GameButtonSm, GameModal, MysticBG } from "@/components/game/ui";
 
 const CLASS_COLOR: Record<string, { text: string; glow: string; border: string }> = {
   Mago:      { text: "#d4a8ff", glow: "rgba(180,100,255,0.6)",  border: "#b464ff" },
@@ -20,10 +20,9 @@ const Bots = () => {
   if (!s?.created) { navigate("/login"); return null; }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden select-none relative"
-      style={{
-        background: "radial-gradient(ellipse at 30% 70%, rgba(80,20,120,0.4), transparent 55%), radial-gradient(ellipse at 70% 30%, rgba(120,50,10,0.35), transparent 55%), hsl(240 20% 6%)"
-      }}>
+    <div className="h-screen flex flex-col overflow-hidden select-none relative">
+      <MysticBG tint="crimson" />
+
 
       {/* fundo do boss em hover */}
       {hovered !== null && (
