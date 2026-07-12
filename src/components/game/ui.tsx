@@ -73,7 +73,15 @@ export const CardThumb = ({def, selected=false, dim=false, price=false, ownedTag
         <span className="text-[0.7rem] font-bold text-gold-light tracking-wider uppercase">{def.name}</span>
       </div>
     ) : (
-      <img src={cardImg(def)} alt={def.name} className="absolute inset-0 w-full h-full object-cover" draggable={false}/>
+      <>
+        <img src={cardImg(def)} alt={def.name} className="absolute inset-0 w-full h-full object-cover" draggable={false}/>
+        <div
+          className="absolute font-serif text-foreground/95 leading-[1.05] text-center flex items-center justify-center px-1"
+          style={{ left:"9%", right:"9%", top:"78.5%", height:"11%", fontSize:"clamp(6px, 1.1cqw, 9px)", containerType:"inline-size", textShadow:"0 1px 2px rgba(0,0,0,0.9)" }}
+        >
+          <span className="line-clamp-3">{def.txt}</span>
+        </div>
+      </>
     )}
     <span className="absolute top-1 left-1 bg-black/80 border border-gold/60 text-gold-light text-[0.62rem] font-bold px-1.5 py-0.5 rounded">
       R{def.rank}
@@ -160,7 +168,15 @@ export const CardPreview = ({def, side="right"}:{def:CardDef|null; side?:"left"|
             <span className="text-sm text-lightning-glow font-bold">Rank {def.rank} · {def.dmg} de Dano</span>
           </div>
         ) : (
-          <img src={cardImg(def)} alt={def.name} className="w-full h-full object-cover" draggable={false}/>
+          <div className="relative w-full h-full">
+            <img src={cardImg(def)} alt={def.name} className="w-full h-full object-cover" draggable={false}/>
+            <div
+              className="absolute font-serif text-foreground leading-tight text-center flex items-center justify-center px-2"
+              style={{ left:"9%", right:"9%", top:"78.5%", height:"11%", fontSize:"11px", textShadow:"0 1px 2px rgba(0,0,0,0.9)" }}
+            >
+              <span>{def.txt}</span>
+            </div>
+          </div>
         )}
       </div>
     </div>
