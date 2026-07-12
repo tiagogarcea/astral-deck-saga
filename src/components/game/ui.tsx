@@ -168,7 +168,15 @@ export const CardPreview = ({def, side="right"}:{def:CardDef|null; side?:"left"|
             <span className="text-sm text-lightning-glow font-bold">Rank {def.rank} · {def.dmg} de Dano</span>
           </div>
         ) : (
-          <img src={cardImg(def)} alt={def.name} className="w-full h-full object-cover" draggable={false}/>
+          <div className="relative w-full h-full">
+            <img src={cardImg(def)} alt={def.name} className="w-full h-full object-cover" draggable={false}/>
+            <div
+              className="absolute font-serif text-foreground leading-tight text-center flex items-center justify-center px-2"
+              style={{ left:"9%", right:"9%", top:"78.5%", height:"11%", fontSize:"11px", textShadow:"0 1px 2px rgba(0,0,0,0.9)" }}
+            >
+              <span>{def.txt}</span>
+            </div>
+          </div>
         )}
       </div>
     </div>
