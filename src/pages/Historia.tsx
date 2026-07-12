@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { STORY, BY_ID, cardImg } from "@/game/data";
 import { loadSave } from "@/game/save";
 import { GameButtonSm, GameModal } from "@/components/game/ui";
+import storyMap from "@/assets/story-map.jpg";
+
 
 const CASTLE_POS: [number, number][] = [[14,72],[32,38],[52,64],[71,32],[87,62]];
 
