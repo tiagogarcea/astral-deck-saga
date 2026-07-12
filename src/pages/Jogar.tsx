@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GameModal, GameButtonSm } from "@/components/game/ui";
+import { GameModal, GameButtonSm, MysticBG } from "@/components/game/ui";
+
 
 const Jogar = () => {
   const navigate = useNavigate();
   const [onlineOpen, setOnlineOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-8 relative overflow-hidden">
-      <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full bg-magic-glow/15 blur-[120px] animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-flame-glow/15 blur-[120px] animate-pulse" style={{animationDelay:'1.2s'}} />
+    <div className="min-h-screen flex items-center justify-center p-8 relative overflow-hidden">
+      <MysticBG tint="purple" />
+      <div className="absolute top-1/3 left-1/4 w-96 h-96 rounded-full bg-magic-glow/15 blur-[120px] animate-pulse pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-flame-glow/15 blur-[120px] animate-pulse pointer-events-none" style={{animationDelay:'1.2s'}} />
+
 
       <div className="relative flex flex-col gap-6 items-center">
         <h1 className="text-4xl font-bold text-gold-light tracking-wider mb-4">Modos de Jogo</h1>
